@@ -10,10 +10,6 @@ use Illuminate\Validation\Rule;
 
 class CategoriaController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('can:access-admin-dashboard');
-    }
 
     /**
      * Display a listing of the categories.

@@ -7,14 +7,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        // Apenas administradores podem acessar estas rotas
-        $this->middleware('can:access-admin-dashboard');
-    }
+
 
     /**
      * Display a listing of the users.
@@ -42,14 +39,9 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'perfil' => ['required', 'string', Rule::in(['cliente', 'freelancer', 'administrador'])],
-            // 'password' => ['nullable', 'confirmed', Rules\Password::defaults()], // Admin pode resetar senha
         ]);
 
         $user->update($request->only('name', 'email', 'perfil'));
-
-        // if ($request->filled('password')) {
-        //     $user->update(['password' => Hash::make($request->password)]);
-        // }
 
         return redirect()->route('admin.users.index')->with('success', 'Usuário atualizado com sucesso.');
     }

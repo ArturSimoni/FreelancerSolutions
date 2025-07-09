@@ -14,7 +14,6 @@ class Categoria extends Model
         'descricao',
     ];
 
-    // Relacionamento muitos-para-muitos com Projeto
     public function projetos()
     {
         return $this->belongsToMany(Projeto::class, 'projeto_categoria');

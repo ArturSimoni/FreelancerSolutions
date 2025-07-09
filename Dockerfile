@@ -13,7 +13,6 @@ RUN apk add --no-cache \
     icu-dev \
     postgresql-dev \
     mysql-client \
-  # Remova 'nginx' daqui se não for usar o php-fpm de forma tradicional para um servidor web
   && docker-php-ext-install pdo pdo_mysql zip exif pcntl \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
   && docker-php-ext-install gd \

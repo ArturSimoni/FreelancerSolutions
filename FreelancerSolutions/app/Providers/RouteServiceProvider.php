@@ -17,7 +17,6 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    // protected const HOME = '/dashboard'; // Comente ou remova esta linha
 
     /**
      * Define the path to your application's "home" route based on user role.
@@ -33,7 +32,7 @@ class RouteServiceProvider extends ServiceProvider
                 return '/freelancer/dashboard';
             }
         }
-        return '/dashboard'; // Padrão para clientes e outros perfis
+        return '/dashboard';
     }
 
 

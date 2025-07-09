@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('remetente_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('destinatario_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('projeto_id')->nullable()->constrained()->onDelete('set null'); // Mensagens podem ser ligadas a um projeto
+            $table->foreignId('projeto_id')->nullable()->constrained()->onDelete('set null');
             $table->text('conteudo');
             $table->timestamp('lida_em')->nullable();
             $table->timestamps();

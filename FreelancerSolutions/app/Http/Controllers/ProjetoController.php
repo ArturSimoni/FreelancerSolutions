@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Projeto;
-use App\Models\Categoria; // Para associar categorias ao projeto
+use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -12,12 +12,7 @@ class ProjetoController extends Controller
 {
     public function __construct()
     {
-        // Chame o construtor da classe pai para garantir que os middlewares sejam inicializados corretamente.
-
-        // Aplica o middleware de autenticação para todas as ações neste controlador
         $this->middleware('auth');
-        // Você pode adicionar mais middlewares para autorização específica de ações
-        // Por exemplo, 'can:create,App\Models\Projeto' para a ação create
     }
 
     /**
@@ -26,9 +21,8 @@ class ProjetoController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Projeto::query(); // Começa com uma query base
+        $query = Projeto::query();
 
-        // Filtros Comuns
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -38,7 +32,8 @@ class ProjetoController extends Controller
         }
 
         if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            // Qualifica o 'status' para a tabela 'projetos'
+            $query->where('projetos.status', $request->status);
         }
 
         if ($request->filled('categoria_id') && $request->categoria_id !== 'all') {
@@ -49,15 +44,14 @@ class ProjetoController extends Controller
         }
 
         if ($user->isAdministrador()) {
-            $projetos = $query->with('cliente')->latest()->paginate(10); // Paginação
+            $projetos = $query->with('cliente')->latest()->paginate(10);
         } elseif ($user->isCliente()) {
-            // Cliente só vê seus próprios projetos
             $projetos = $query->where('cliente_id', $user->id)
                               ->with('cliente')->latest()->paginate(10);
         } else { // Freelancer
-            // Freelancer vê projetos abertos OU projetos em que sua candidatura foi aceita
             $projetos = $query->where(function($q) use ($user) {
-                                $q->where('status', 'aberto')
+                                // CORRIGIDO: Qualifica o 'status' para a tabela 'projetos'
+                                $q->where('projetos.status', 'aberto')
                                   ->orWhere(function($subQ) use ($user) {
                                       $subQ->whereHas('candidaturas', function($candQ) use ($user) {
                                           $candQ->where('freelancer_id', $user->id)
@@ -67,10 +61,10 @@ class ProjetoController extends Controller
                             })
                             ->with('cliente', 'categorias', 'candidaturas')
                             ->latest()
-                            ->paginate(10); // Paginação
+                            ->paginate(10);
         }
 
-        $categorias = Categoria::all(); // Para o filtro de categorias
+        $categorias = Categoria::all();
         $statuses = [
             'aberto' => 'Aberto',
             'em_andamento' => 'Em Andamento',
@@ -91,7 +85,7 @@ class ProjetoController extends Controller
             return redirect()->route('dashboard')->with('error', 'Acesso negado. Apenas clientes podem criar projetos.');
         }
 
-        $categorias = Categoria::all(); // Carrega todas as categorias para seleção
+        $categorias = Categoria::all();
         return view('projetos.create', compact('categorias'));
     }
 
@@ -119,10 +113,9 @@ class ProjetoController extends Controller
             'descricao' => $request->descricao,
             'orcamento' => $request->orcamento,
             'prazo' => $request->prazo,
-            'status' => 'aberto', // Status inicial
+            'status' => 'aberto',
         ]);
 
-        // Sincroniza as categorias (relacionamento muitos-para-muitos)
         if ($request->has('categorias')) {
             $projeto->categorias()->sync($request->categorias);
         }
@@ -137,19 +130,16 @@ class ProjetoController extends Controller
     {
         $this->authorize('view', $projeto);
 
-        // Carrega candidaturas (apenas as aceitas se for freelancer, ou todas se for cliente)
         $projeto->load(['cliente', 'categorias', 'avaliacoes']);
 
         if (Auth::user()->id === $projeto->cliente_id) {
             $projeto->load('candidaturas.freelancer');
         } else if (Auth::user()->isFreelancer()) {
-             // Carrega a candidatura aceita do freelancer para este projeto
              $projeto->load(['candidaturas' => function ($query) {
                  $query->where('status', 'aceita')->where('freelancer_id', Auth::id());
              }, 'candidaturas.freelancer']);
         }
 
-        // Determina o freelancer aceito para o projeto
         $freelancerAceito = $projeto->candidaturas->where('status', 'aceita')->first();
 
         return view('projetos.show', compact('projeto', 'freelancerAceito'));
@@ -161,7 +151,7 @@ class ProjetoController extends Controller
      */
     public function edit(Projeto $projeto)
     {
-        $this->authorize('update', $projeto); // Política de autorização
+        $this->authorize('update', $projeto);
         $categorias = Categoria::all();
         return view('projetos.edit', compact('projeto', 'categorias'));
     }
@@ -171,7 +161,7 @@ class ProjetoController extends Controller
      */
     public function update(Request $request, Projeto $projeto)
     {
-        $this->authorize('update', $projeto); // Garante que apenas o dono do projeto pode editar por padrão
+        $this->authorize('update', $projeto);
 
         $user = Auth::user();
         $rules = [
@@ -184,19 +174,16 @@ class ProjetoController extends Controller
             'categorias.*' => ['exists:categorias,id'],
         ];
 
-        // Se o usuário logado for o freelancer aceito no projeto e ele está marcando como concluído
         if ($user->isFreelancer() &&
             $projeto->freelancerAceito &&
             $projeto->freelancerAceito->freelancer_id === $user->id &&
             $request->status === 'aguardando_aprovacao' &&
             $projeto->status === 'em_andamento') {
 
-            // Apenas o status pode ser atualizado pelo freelancer aceito para 'aguardando_aprovacao'
             $projeto->update(['status' => 'aguardando_aprovacao']);
             return redirect()->route('projetos.show', $projeto)->with('success', 'Projeto marcado como "Aguardando Aprovação" do cliente.');
 
         } elseif ($user->id === $projeto->cliente_id) {
-            // Cliente pode mudar para "concluido" ou "em andamento" (revisão)
             $oldStatus = $projeto->status;
             $projeto->update($request->all());
 
@@ -206,15 +193,12 @@ class ProjetoController extends Controller
                 $projeto->categorias()->sync([]);
             }
 
-            // Lógica para quando o cliente finaliza o projeto
             if ($projeto->status === 'concluido' && $oldStatus !== 'concluido') {
                 return redirect()->route('projetos.show', $projeto)->with('success', 'Projeto finalizado com sucesso! Agora você pode avaliar o freelancer.');
             }
-            // Lógica para quando o cliente solicita revisão (volta para em_andamento)
             if ($request->status === 'em_andamento' && $oldStatus === 'aguardando_aprovacao') {
                  return redirect()->route('projetos.show', $projeto)->with('success', 'Solicitação de revisão enviada. O projeto voltou para "Em Andamento".');
             }
-
 
             return redirect()->route('projetos.show', $projeto)->with('success', 'Projeto atualizado com sucesso!');
         }
@@ -228,7 +212,7 @@ class ProjetoController extends Controller
      */
     public function destroy(Projeto $projeto)
     {
-        $this->authorize('delete', $projeto); // Política de autorização
+        $this->authorize('delete', $projeto);
         $projeto->delete();
         return redirect()->route('projetos.index')->with('success', 'Projeto excluído com sucesso!');
     }

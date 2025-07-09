@@ -12,9 +12,6 @@
         public function up(): void
         {
             Schema::table('candidaturas', function (Blueprint $table) {
-                // Adiciona a coluna 'proposta' como TEXT.
-                // Se você quer que seja obrigatória, remova ->nullable().
-                // Adicione-a após 'freelancer_id' para manter a ordem lógica.
                 $table->text('proposta')->after('freelancer_id');
             });
         }
@@ -25,7 +22,6 @@
         public function down(): void
         {
             Schema::table('candidaturas', function (Blueprint $table) {
-                // Remove a coluna 'proposta' se a migração for revertida
                 $table->dropColumn('proposta');
             });
         }

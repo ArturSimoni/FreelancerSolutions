@@ -19,7 +19,7 @@ class Candidatura extends Model
         'freelancer_id',
         'proposta',
         'proposta_valor',
-        'proposta_prazo', // Adicione esta linha
+        'proposta_prazo',
         'status',
     ];
 
@@ -30,10 +30,9 @@ class Candidatura extends Model
      */
     protected $casts = [
         'proposta_valor' => 'float',
-        'proposta_prazo' => 'integer', // Adicione esta linha, assumindo que é um número de dias
+        'proposta_prazo' => 'integer',
     ];
 
-    // Relacionamentos
     public function projeto()
     {
         return $this->belongsTo(Projeto::class);

@@ -16,6 +16,7 @@ class Projeto extends Model
         'orcamento',
         'prazo',
         'status',
+
     ];
 
     protected $casts = [
@@ -42,13 +43,11 @@ class Projeto extends Model
         return $this->hasMany(Mensagem::class);
     }
 
-    // Relacionamento muitos-para-muitos com Categoria
     public function categorias()
     {
         return $this->belongsToMany(Categoria::class, 'projeto_categoria');
     }
 
-    // Método para obter o freelancer que foi aceito para este projeto
     public function freelancerAceito()
     {
         return $this->hasOne(Candidatura::class)->where('status', 'aceita')->with('freelancer');

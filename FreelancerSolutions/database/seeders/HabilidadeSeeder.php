@@ -14,13 +14,10 @@ class HabilidadeSeeder extends Seeder
      */
     public function run(): void
     {
-        // Desativa a verificação de chaves estrangeiras
         Schema::disableForeignKeyConstraints();
 
-        // Limpa a tabela antes de inserir novos dados
         DB::table('habilidades')->truncate();
 
-        // Dados de exemplo para as habilidades
         $habilidades = [
             ['nome' => 'PHP'],
             ['nome' => 'Laravel'],
@@ -47,10 +44,8 @@ class HabilidadeSeeder extends Seeder
             ['nome' => 'Análise de Dados'],
         ];
 
-        // Insere os dados na tabela 'habilidades'
         DB::table('habilidades')->insert($habilidades);
 
-        // Reativa a verificação de chaves estrangeiras
         Schema::enableForeignKeyConstraints();
     }
 }

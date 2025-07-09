@@ -6,7 +6,7 @@ use App\Models\Mensagem;
 use App\Models\User;
 use App\Models\Projeto; // Importe o modelo Projeto
 use Illuminate\Auth\Access\Response;
-use Illuminate\Support\Facades\Log; // Adicione esta linha para usar Log
+use Illuminate\Support\Facades\Log;
 
 class MensagemPolicy
 {
@@ -45,8 +45,14 @@ class MensagemPolicy
             return true;
         }
 
-        Log::warning('MensagemPolicy@view: Acesso negado. User ID: ' . $user->id . ', Projeto ID: ' . $projeto->id . '. Razão: Não é administrador, cliente ou freelancer aceite.');
-        return false; // Nenhuma das condições acima foi satisfeita
+        // Permite que o freelancer veja o chat se ele tiver uma candidatura
+        if ($user->isFreelancer() && $projeto->candidaturas()->where('freelancer_id', $user->id)->exists()) {
+            Log::debug('MensagemPolicy@view: Autorizado como Freelancer com candidatura.');
+            return true;
+        }
+
+        Log::warning('MensagemPolicy@view: Acesso negado. User ID: ' . $user->id . ', Projeto ID: ' . $projeto->id);
+        return false;
     }
 
     /**
@@ -54,30 +60,34 @@ class MensagemPolicy
      */
     public function create(User $user, Projeto $projeto): bool
     {
-        Log::debug('MensagemPolicy@create: User ID: ' . $user->id . ', Perfil: ' . $user->perfil);
-        Log::debug('MensagemPolicy@create: Projeto ID: ' . $projeto->id . ', Cliente ID: ' . $projeto->cliente_id . ', Freelancer Aceito ID: ' . ($projeto->freelancer_aceito_id ?? 'Nulo'));
+        Log::debug('MensagemPolicy@create: Verificando permissão para User ID: ' . $user->id . ' no Projeto ID: ' . $projeto->id);
 
-        // Um administrador sempre pode criar (enviar mensagens).
+        // 1. Administradores sempre podem enviar mensagens.
         if ($user->isAdministrador()) {
-            Log::debug('MensagemPolicy@create: Autorizado como Administrador.');
+            Log::debug('Autorizado: Usuário é Administrador.');
             return true;
         }
 
-        // Apenas o cliente do projeto OU o freelancer aceite no projeto pode enviar mensagens.
-        // E o projeto deve ter um freelancer aceite para que o chat seja ativo.
-        if ($projeto->freelancer_aceito_id) { // Verifica se há um freelancer aceite
-            if ($user->id === $projeto->cliente_id) {
-                Log::debug('MensagemPolicy@create: Autorizado como Cliente do Projeto.');
-                return true;
-            }
-            if ($user->id === $projeto->freelancer_aceito_id) {
-                Log::debug('MensagemPolicy@create: Autorizado como Freelancer Aceito do Projeto.');
-                return true;
-            }
+        // 2. O cliente do projeto sempre pode enviar mensagens.
+        if ($user->id === $projeto->cliente_id) {
+            Log::debug('Autorizado: Usuário é o Cliente do Projeto.');
+            return true;
         }
 
-        Log::warning('MensagemPolicy@create: Acesso negado. User ID: ' . $user->id . ', Projeto ID: ' . $projeto->id . '. Razão: Não é administrador, cliente ou freelancer aceite, ou projeto sem freelancer aceite.');
-        return false; // Nenhuma das condições acima foi satisfeita
+        // 3. O freelancer ACEITO para o projeto pode enviar mensagens.
+        if ($projeto->freelancer_aceito_id && $user->id === $projeto->freelancer_aceito_id) {
+            Log::debug('Autorizado: Usuário é o Freelancer Aceito.');
+            return true;
+        }
+
+        // 4. (CORRIGIDO) Um freelancer que fez candidatura para o projeto pode enviar mensagens.
+        if ($user->isFreelancer() && $projeto->candidaturas()->where('freelancer_id', '==', $user->id)->exists()) {
+            Log::debug('Autorizado: Usuário é um Freelancer com candidatura no projeto.');
+            return true;
+        }
+
+        Log::warning('Acesso NEGADO para criar mensagem. User ID: ' . $user->id . ' no Projeto ID: ' . $projeto->id);
+        return false; // Se nenhuma das condições acima for atendida, nega o acesso.
     }
 
     /**
@@ -85,45 +95,10 @@ class MensagemPolicy
      */
     public function update(User $user, Mensagem $mensagem): bool
     {
-        // Um administrador pode atualizar qualquer mensagem.
         if ($user->isAdministrador()) {
             return true;
         }
-
-        // Apenas o destinatário da mensagem pode marcá-la como lida.
-        // Ou o remetente pode editar (se essa funcionalidade for permitida).
         return $user->id === $mensagem->destinatario_id || $user->id === $mensagem->remetente_id;
-    }
-
-    /**
-     * Determine whether the user can mark the message as read.
-     */
-    public function markAsRead(User $user, Mensagem $mensagem): bool
-    {
-        // Um administrador pode marcar qualquer mensagem como lida.
-        if ($user->isAdministrador()) {
-            return true;
-        }
-
-        // Apenas o destinatário da mensagem pode marcá-la como lida.
-        return $user->id === $mensagem->destinatario_id;
-    }
-
-    /**
-     * Determine whether the user can edit the message content.
-     * (Considerar cuidadosamente se esta funcionalidade é desejada em um chat).
-     */
-    public function edit(User $user, Mensagem $mensagem): bool
-    {
-        // Um administrador pode editar qualquer mensagem.
-        if ($user->isAdministrador()) {
-            return true;
-        }
-
-        // Apenas o remetente pode editar sua própria mensagem,
-        // e talvez apenas por um curto período após o envio.
-        // Exemplo: Permitir edição por 5 minutos após o envio.
-        return $user->id === $mensagem->remetente_id && $mensagem->created_at->diffInMinutes(now()) < 5;
     }
 
     /**
@@ -131,41 +106,9 @@ class MensagemPolicy
      */
     public function delete(User $user, Mensagem $mensagem): bool
     {
-        // Um administrador pode deletar qualquer mensagem.
         if ($user->isAdministrador()) {
             return true;
         }
-
-        // Apenas o remetente pode deletar sua própria mensagem.
-        // Ou talvez o cliente/freelancer aceite (se a regra de negócio permitir).
         return $user->id === $mensagem->remetente_id;
-    }
-
-    /**
-     * Determine whether the user can reassign the message (e.g., to another project or user).
-     * Esta é uma funcionalidade mais avançada e geralmente restrita.
-     */
-    public function reassign(User $user, Mensagem $mensagem): bool
-    {
-        // Apenas administradores podem reatribuir mensagens.
-        return $user->isAdministrador();
-    }
-
-    /**
-     * Determine whether the user can restore the model (if using soft deletes).
-     */
-    public function restore(User $user, Mensagem $mensagem): bool
-    {
-        // Apenas administradores podem restaurar mensagens.
-        return $user->isAdministrador();
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete(User $user, Mensagem $mensagem): bool
-    {
-        // Apenas administradores podem forçar a exclusão de mensagens.
-        return $user->isAdministrador();
     }
 }

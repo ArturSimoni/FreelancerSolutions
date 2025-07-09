@@ -4,16 +4,25 @@ namespace App\Policies;
 
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
-use Illuminate\Support\Facades\Log; // Adicione esta linha para usar Log
+use Illuminate\Support\Facades\Log;
 
 class UserPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->isAdministrador()) {
+            return true;
+        }
+
+        return null; // Deixa as outras regras da policy decidirem para não-admins
+    }
+
     public function viewAny(User $user): bool
     {
-        return true; // Todos podem ver listagens de usuários (se necessário)
+        return true;
     }
 
     /**
@@ -21,8 +30,6 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        // Administrador pode ver qualquer perfil
-        // Usuário pode ver seu próprio perfil
         return $user->isAdministrador() || $user->id === $model->id;
     }
 
@@ -31,7 +38,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return true; // Registro é público
+        return true;
     }
 
     /**
@@ -39,8 +46,6 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        // Administrador pode editar qualquer perfil
-        // Usuário pode editar seu próprio perfil
         return $user->isAdministrador() || $user->id === $model->id;
     }
 
@@ -49,7 +54,6 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        // Apenas administrador pode deletar usuários
         return $user->isAdministrador();
     }
 
@@ -69,7 +73,6 @@ class UserPolicy
         return $user->isAdministrador();
     }
 
-    // Políticas específicas para Dashboards
     public function accessAdminDashboard(User $user): bool
     {
         return $user->isAdministrador();

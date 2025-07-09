@@ -2,14 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\Categoria;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\User;
 use App\Models\Projeto;
-use App\Models\Mensagem; // Importe o modelo Mensagem
+use App\Models\Mensagem;
 use App\Policies\UserPolicy;
 use App\Policies\ProjetoPolicy;
-use App\Policies\MensagemPolicy; // Importe a MensagemPolicy
+use App\Policies\MensagemPolicy;
+use App\Policies\CategoriaPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -21,7 +23,8 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         User::class => UserPolicy::class,
         Projeto::class => ProjetoPolicy::class,
-        Mensagem::class => MensagemPolicy::class, // Adicione esta linha
+        Mensagem::class => MensagemPolicy::class,
+        Categoria::class => CategoriaPolicy::class,
     ];
 
     /**
@@ -36,3 +39,4 @@ class AuthServiceProvider extends ServiceProvider
         });
     }
 }
+

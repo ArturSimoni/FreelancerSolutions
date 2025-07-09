@@ -16,7 +16,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'perfil', // Certifique-se de que 'perfil' está aqui
+        'perfil',
     ];
 
     protected $hidden = [
@@ -28,7 +28,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // Relacionamentos:
+
     public function perfilFreelancer()
     {
         return $this->hasOne(PerfilFreelancer::class);
@@ -76,7 +76,6 @@ class User extends Authenticatable
         )->where('candidaturas.status', 'aceita');
     }
 
-    // Métodos auxiliares para verificar o perfil
     public function isCliente()
     {
         return $this->perfil === 'cliente';

@@ -15,7 +15,7 @@ class NotificationController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $notifications = $user->notifications()->latest()->paginate(10); // Pagina as notificações
+        $notifications = $user->notifications()->latest()->paginate(10);
 
         return view('notifications.index', compact('notifications'));
     }
@@ -25,7 +25,6 @@ class NotificationController extends Controller
         $notification = Auth::user()->notifications()->findOrFail($id);
         $notification->markAsRead();
 
-        // Redireciona para o link da notificação se houver
         if (isset($notification->data['link'])) {
             return redirect($notification->data['link'])->with('success', 'Notificação marcada como lida.');
         }
@@ -43,8 +42,7 @@ class NotificationController extends Controller
     {
         $notification = auth()->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
-    
-        // Redireciona para o link dentro da notificação, ou para a home se não houver link
+
         return redirect($notification->data['link'] ?? '/dashboard');
     }
 }

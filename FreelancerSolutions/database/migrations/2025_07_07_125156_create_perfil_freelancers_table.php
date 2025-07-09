@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('perfil_freelancers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // ID_Usuario
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('bio')->nullable();
-            $table->string('portifolio_url')->nullable(); // PortifolioURL
-            $table->decimal('preco_hora', 8, 2)->nullable(); // PrecoHora
+            $table->string('portifolio_url')->nullable();
+            $table->decimal('preco_hora', 8, 2)->nullable();
             $table->timestamps();
         });
     }

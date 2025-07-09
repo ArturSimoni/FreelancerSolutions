@@ -37,16 +37,15 @@ class ProjetoPolicy
      */
     public function update(User $user, Projeto $projeto): bool
     {
-        // Cliente pode atualizar seu próprio projeto
         if ($user->id === $projeto->cliente_id) {
             return true;
         }
 
-        // Freelancer aceito pode mudar o status para 'aguardando_aprovacao'
+
         if ($user->isFreelancer() &&
             $projeto->freelancerAceito &&
             $projeto->freelancerAceito->freelancer_id === $user->id &&
-            $projeto->status === 'em_andamento') { // Apenas se o projeto estiver em andamento
+            $projeto->status === 'em_andamento') {
             return true;
         }
 

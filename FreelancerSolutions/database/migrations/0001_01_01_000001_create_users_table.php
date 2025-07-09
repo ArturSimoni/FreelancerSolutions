@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable(); // Mantido para o Breeze
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('perfil')->default('cliente'); // 'cliente', 'freelancer', 'administrador'
+            $table->string('perfil')->default('cliente');
             $table->rememberToken();
             $table->timestamps();
         });

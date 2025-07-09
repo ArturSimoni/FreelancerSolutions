@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('candidaturas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('freelancer_id')->constrained('users')->onDelete('cascade'); // ID_Freelancer
-            $table->foreignId('projeto_id')->constrained()->onDelete('cascade'); // ID_Projeto
-            $table->decimal('proposta_valor', 10, 2); // PropostaValor
-            $table->integer('proposta_prazo'); // PropostaPrazo
-            $table->string('status')->default('pendente'); // 'pendente', 'aceita', 'recusada'
+            $table->foreignId('freelancer_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('projeto_id')->constrained()->onDelete('cascade');
+            $table->decimal('proposta_valor', 10, 2);
+            $table->integer('proposta_prazo');
+            $table->string('status')->default('pendente');
             $table->timestamps();
         });
     }

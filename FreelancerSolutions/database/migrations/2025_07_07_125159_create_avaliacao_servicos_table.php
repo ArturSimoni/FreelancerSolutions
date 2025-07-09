@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('avaliacao_servicos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('avaliador_id')->constrained('users')->onDelete('cascade'); // ID_avaliador (Cliente ou Freelancer)
-            $table->foreignId('avaliado_id')->constrained('users')->onDelete('cascade'); // ID_avaliado (Freelancer ou Cliente)
-            $table->foreignId('projeto_id')->constrained()->onDelete('cascade'); // ID_projeto
+            $table->foreignId('avaliador_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('avaliado_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('projeto_id')->constrained()->onDelete('cascade');
             $table->text('comentario')->nullable();
-            $table->integer('nota'); // Nota (1-5, por exemplo)
-            $table->string('tipo_avaliacao'); // 'cliente_para_freelancer' ou 'freelancer_para_cliente'
+            $table->integer('nota');
+            $table->string('tipo_avaliacao');
             $table->timestamps();
         });
     }

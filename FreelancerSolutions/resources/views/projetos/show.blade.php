@@ -105,11 +105,25 @@
                                 <a href="{{ route('projetos.index') }}" class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700">Voltar</a>
 
                                 {{-- Ações para Cliente e Freelancer do Projeto --}}
-                                @if(Auth::check() && (Auth::user()->id === $projeto->cliente_id || ($projeto->freelancerAceito && Auth::user()->id === $projeto->freelancerAceito->freelancer_id)))
-                                    <a href="{{ route('mensagens.index', $projeto) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500">
-                                        <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-                                        Mensagens
-                                    </a>
+                                {{-- Primeiro, verificamos se já existe um freelancer aceito para habilitar o chat --}}
+                                @if ($projeto->freelancerAceito)
+
+                                    {{-- Agora, verificamos se o usuário logado é uma das duas pessoas que podem conversar --}}
+                                    @if (Auth::id() === $projeto->cliente_id || Auth::id() === $projeto->freelancerAceito->freelancer_id)
+
+                                        {{-- Bloco PHP para determinar quem é o "outro" na conversa --}}
+                                        @php
+                                            $destinatarioDoChat = (Auth::id() === $projeto->cliente_id)
+                                                                ? $projeto->freelancerAceito->freelancer
+                                                                : $projeto->cliente;
+                                        @endphp
+
+                                        {{-- Link corrigido, agora passando o projeto E o destinatário para a rota --}}
+                                        <a href="{{ route('mensagens.index', ['projeto' => $projeto, 'destinatario' => $destinatarioDoChat]) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500">
+                                            <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
+                                            Mensagens
+                                        </a>
+                                    @endif
                                 @endif
 
                                 {{-- Ações do Cliente --}}
@@ -204,7 +218,7 @@
                                 @endif
                             </div>
                         @endif
-                     </div>
+                       </div>
 
                 </div>
 
